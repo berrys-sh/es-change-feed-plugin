@@ -47,7 +47,7 @@ public class ChangesFeedPlugin extends Plugin {
 
         if (enabled) {
             int port = settings.getAsInt(SETTING_PORT, 9400);
-            String[] sourcesStr = settings.getAsArray(SETTING_LISTEN_SOURCE, new String[]{"*"});
+            String[] sourcesStr = settings.getAsArray(SETTING_LISTEN_SOURCE, new String[]{"frame/*/*"});
             this.sources = Arrays.stream(sourcesStr)
                     .map(Source::new)
                     .collect(Collectors.toSet());
