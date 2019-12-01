@@ -15,8 +15,7 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * Date: 04/05/2017
- * Time: 16:54
+ * Date: 04/05/2017 Time: 16:54
  */
 public class WebSocketIndexListener implements IndexingOperationListener {
 
@@ -24,16 +23,18 @@ public class WebSocketIndexListener implements IndexingOperationListener {
 
     private final Set<Source> sources;
     private final WebSocketRegister register;
+    private final RedisClient redisClient;
 
-    WebSocketIndexListener(Set<Source> sources, WebSocketRegister register) {
+    WebSocketIndexListener(Set<Source> sources, WebSocketRegister register,RedisClient redisClient) {
         this.sources = sources;
         this.register = register;
+        this.redisClient = redisClient;
     }
 
     @Override
     public void postIndex(ShardId shardId, Engine.Index index, Engine.IndexResult result) {
 
-        ChangeEvent change=new ChangeEvent(
+        ChangeEvent change = new ChangeEvent(
                 shardId.getIndex().getName(),
                 index.type(),
                 index.id(),
@@ -49,7 +50,7 @@ public class WebSocketIndexListener implements IndexingOperationListener {
     @Override
     public void postDelete(ShardId shardId, Engine.Delete delete, Engine.DeleteResult result) {
 
-        ChangeEvent change=new ChangeEvent(
+        ChangeEvent change = new ChangeEvent(
                 shardId.getIndex().getName(),
                 delete.type(),
                 delete.id(),
@@ -114,7 +115,7 @@ public class WebSocketIndexListener implements IndexingOperationListener {
             log.error("Failed to write JSON", e);
             return;
         }
-
+        this.redisClient.pushBl(message);
         for (WebSocketEndpoint listener : register.getListeners()) {
             try {
                 listener.sendMessage(message);

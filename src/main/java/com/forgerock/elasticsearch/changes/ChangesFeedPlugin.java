@@ -14,8 +14,7 @@ package com.forgerock.elasticsearch.changes;
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-*/
-
+ */
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Setting;
@@ -39,6 +38,7 @@ public class ChangesFeedPlugin extends Plugin {
     private final Set<Source> sources;
     private final boolean enabled;
     private final static WebSocketRegister REGISTER = new WebSocketRegister();
+    private final static RedisClient redisClient = new RedisClient();
 
     public ChangesFeedPlugin(Settings settings) {
         log.info("Starting Changes Plugin");
@@ -62,7 +62,7 @@ public class ChangesFeedPlugin extends Plugin {
     @Override
     public void onIndexModule(IndexModule indexModule) {
         if (enabled) {
-            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, REGISTER));
+            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, REGISTER,redisClient));
         }
         super.onIndexModule(indexModule);
     }
