@@ -1,0 +1,27 @@
+docker run -d --name elasticsearch5.6.0 -p 9200:9200 -p 9300:9300 -p 9400:9400 --link redis elasticsearch:5.6.0
+yum install git
+yum install maven
+yum install unzip
+cd /usr/share/elasticsearch/plugins
+git clone https://github.com/ForgeRock/es-change-feed-plugin.git
+vi src/main/java/com/forgerock/elasticsearch/changes/WebSocketEndpoint.java 
+vi src/main/java/com/forgerock/elasticsearch/changes/ChangesFeedPlugin.java 
+vi src/main/java/com/forgerock/elasticsearch/changes/WebSocketIndexListener.java 
+vi src/main/java/com/forgerock/elasticsearch/changes/WebSocketServer.java
+vi pom.xml
+mvn clean install
+
+grant {
+   permission java.lang.RuntimePermission "setContextClassLoader";
+   permission java.net.SocketPermission "*", "accept,listen,resolve";
+};
+
+###########################################################################
+
+FROM docker.elastic.co/elasticsearch/elasticsearch:5.6.0
+#FROM elasticsearch:7.4.2
+USER root
+RUN yum install git -y
+RUN yum install maven -y
+RUN yum install unzip -y
+USER elasticsearch
