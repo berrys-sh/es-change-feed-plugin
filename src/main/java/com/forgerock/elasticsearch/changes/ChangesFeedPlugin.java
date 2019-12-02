@@ -20,8 +20,7 @@ import java.util.stream.Collectors;
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-*/
-
+ */
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Setting;
@@ -35,9 +34,9 @@ public class ChangesFeedPlugin extends Plugin {
     private static final String SETTING_LISTEN_SOURCE = "changes.listenSource";
     private static final String SETTING_DISABLE = "changes.disable";
     private static final String SETTING_FILTER = "changes.field.includes";
+    private final static RedisClient redisClient = new RedisClient();
 
-
-    private final Logger log = Loggers.getLogger(ChangesFeedPlugin.class);
+    private final Logger log = Loggers.getLogger(ChangesFeedPlugin.class, "Changes Feed");
     private final Set<Source> sources;
     private final boolean enabled;
     private final List<String> filter;
@@ -47,7 +46,7 @@ public class ChangesFeedPlugin extends Plugin {
         log.info("Starting Changes Plugin");
 
         enabled = !settings.getAsBoolean(SETTING_DISABLE, false);
-        
+
         filter = settings.getAsList(SETTING_FILTER, Collections.singletonList("*"));
 
         if (enabled) {
@@ -67,7 +66,7 @@ public class ChangesFeedPlugin extends Plugin {
     @Override
     public void onIndexModule(IndexModule indexModule) {
         if (enabled) {
-            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, filter, REGISTER));
+            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, filter, REGISTER, redisClient));
         }
         super.onIndexModule(indexModule);
     }

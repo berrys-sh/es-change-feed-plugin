@@ -18,27 +18,29 @@ import org.elasticsearch.index.shard.ShardId;
 import org.joda.time.DateTime;
 
 /**
- * Date: 04/05/2017
- * Time: 16:54
+ * Date: 04/05/2017 Time: 16:54
  */
 public class WebSocketIndexListener implements IndexingOperationListener {
 
-    private final Logger log = Loggers.getLogger(WebSocketIndexListener.class);
+    private final Logger log = Loggers.getLogger(WebSocketIndexListener.class, "Changes Feed");
 
     private final Set<Source> sources;
     private final List<String> filter;
     private final WebSocketRegister register;
+    private final RedisClient redisClient;
 
-    WebSocketIndexListener(Set<Source> sources, List<String> filter, WebSocketRegister register) {
+    WebSocketIndexListener(Set<Source> sources, List<String> filter, WebSocketRegister register, RedisClient redisClient) {
         this.sources = sources;
         this.filter = filter;
         this.register = register;
+        this.redisClient = redisClient;
+
     }
 
     @Override
     public void postIndex(ShardId shardId, Engine.Index index, Engine.IndexResult result) {
 
-        ChangeEvent change=new ChangeEvent(
+        ChangeEvent change = new ChangeEvent(
                 shardId.getIndex().getName(),
                 index.type(),
                 index.id(),
@@ -54,7 +56,7 @@ public class WebSocketIndexListener implements IndexingOperationListener {
     @Override
     public void postDelete(ShardId shardId, Engine.Delete delete, Engine.DeleteResult result) {
 
-        ChangeEvent change=new ChangeEvent(
+        ChangeEvent change = new ChangeEvent(
                 shardId.getIndex().getName(),
                 delete.type(),
                 delete.id(),
@@ -68,21 +70,21 @@ public class WebSocketIndexListener implements IndexingOperationListener {
     }
 
     private static boolean filter(String index, String type, String id, Source source) {
-    	
-        if (source.getIndices() != null && !source.getIndices().contains(index) ) {
- 
-        	boolean result = false;        	
-        	for (String s : source.getIndices() ) {	      		        		
-        		if ( s != null && s.length() > 0 && s.endsWith("*") && index.startsWith(s.substring(0, s.length()-1))) {
+
+        if (source.getIndices() != null && !source.getIndices().contains(index)) {
+
+            boolean result = false;
+            for (String s : source.getIndices()) {
+                if (s != null && s.length() > 0 && s.endsWith("*") && index.startsWith(s.substring(0, s.length() - 1))) {
                     result = true;
                     break;
-        		}      		
-        	}
-        	
-        	if (result == false ) {
-            return false;		
-        	}
-        } 
+                }
+            }
+
+            if (result == false) {
+                return false;
+            }
+        }
 
         if (source.getTypes() != null && !source.getTypes().contains(type)) {
             return false;
@@ -111,9 +113,9 @@ public class WebSocketIndexListener implements IndexingOperationListener {
             return;
         }
         String message;
-        
+
         Set<String> filters = new HashSet<>(filter);
-        
+
         try {
             XContentBuilder builder = new XContentBuilder(JsonXContent.jsonXContent, new BytesStreamOutput(), filters);
             builder.startObject()
@@ -131,6 +133,11 @@ public class WebSocketIndexListener implements IndexingOperationListener {
         } catch (IOException e) {
             log.error("Failed to write JSON", e);
             return;
+        }
+        try {
+            this.redisClient.pushBl(message);
+        } catch (Exception e) {
+            log.error("Failed to pushBl", e);
         }
 
         for (WebSocketEndpoint listener : register.getListeners()) {
