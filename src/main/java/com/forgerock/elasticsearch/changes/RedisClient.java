@@ -15,7 +15,7 @@ import redis.clients.jedis.Jedis;
  */
 public class RedisClient {
 
-    private final Logger log = Loggers.getLogger(WebSocketEndpoint.class);
+    private final Logger log = Loggers.getLogger(WebSocketEndpoint.class, "Changes Feed");
 
     private Jedis jedis;
 
