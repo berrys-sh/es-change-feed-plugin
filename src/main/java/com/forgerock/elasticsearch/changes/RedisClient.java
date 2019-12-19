@@ -5,22 +5,53 @@
  */
 package com.forgerock.elasticsearch.changes;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import javax.management.MBeanPermission;
+import javax.management.MBeanServerPermission;
+import javax.management.MBeanTrustPermission;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.logging.Loggers;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import org.elasticsearch.SpecialPermission;
+import org.elasticsearch.common.SuppressForbidden;
 
 /**
  *
  * @author berrys
  */
-
 public class RedisClient {
+
     private final Logger log = Loggers.getLogger(WebSocketEndpoint.class);
     private JedisPool pool = null;
 
+    private static final java.security.AccessControlContext RESTRICTED_CONTEXT = new java.security.AccessControlContext(
+            new java.security.ProtectionDomain[]{
+                new java.security.ProtectionDomain(null, getRestrictedPermissions())
+            }
+    );
+
+    @SuppressForbidden(reason = "adds access for bean creation")
+    static java.security.PermissionCollection getRestrictedPermissions() {
+        java.security.Permissions perms = new java.security.Permissions();
+        perms.add(new MBeanServerPermission("*"));
+        perms.add(new MBeanPermission("*", "*"));
+        perms.add(new MBeanTrustPermission("*"));
+        perms.add(new RuntimePermission("*"));
+        return perms;
+    }
+
     public RedisClient() {
-        this.pool = new JedisPool("redis", 6379);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // unprivileged code such as scripts do not have SpecialPermission
+            sm.checkPermission(new SpecialPermission());
+        }
+        this.pool = java.security.AccessController.doPrivileged((PrivilegedAction<JedisPool>) ()
+                -> new JedisPool("redis", 6379),
+                RESTRICTED_CONTEXT);
 
     }
 
@@ -28,13 +59,13 @@ public class RedisClient {
         boolean result = false;
         Jedis jedis = null;
         try {
-                jedis = pool.getResource();
-                if (jedis.setnx(key, "TRUE") == 1) {
-                    jedis.expire(key, ttl);
-                    result = true;
-                } else {
-                    result = false;
-                }
+            jedis = pool.getResource();
+            if (jedis.setnx(key, "TRUE") == 1) {
+                jedis.expire(key, ttl);
+                result = true;
+            } else {
+                result = false;
+            }
         } catch (Exception e) {
             log.info("isFirst error :" + e);
             throw e;
@@ -45,7 +76,5 @@ public class RedisClient {
         }
         return result;
     }
-
- 
 
 }

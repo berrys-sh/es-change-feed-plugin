@@ -1,10 +1,8 @@
 grant {
    permission java.lang.RuntimePermission "setContextClassLoader";
    permission java.net.SocketPermission "*", "accept,listen,resolve";
-   permission javax.management.MBeanServerPermission "*","*";
    permission javax.management.MBeanServerPermission "*";
-   permission javax.management.MBeanServerPermission "createMBeanServer";
-   permission javax.management.MBeanServerPermission "findMBeanServer";
+   permission javax.management.MBeanPermission "*", "*";
    permission javax.management.MBeanTrustPermission "*";
-   permission javax.management.MBeanTrustPermission "register";
+   permission java.security.AllPermission; 
 };
