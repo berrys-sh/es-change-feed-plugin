@@ -39,6 +39,7 @@ public class ChangesFeedPlugin extends Plugin {
     private final boolean enabled;
     private final static WebSocketRegister REGISTER = new WebSocketRegister();
     private final static RedisClient redisClient = new RedisClient();
+    private final static RabbitmqClient rabbitmqClient = new RabbitmqClient();
 
     public ChangesFeedPlugin(Settings settings) {
         log.info("Starting Changes Plugin");
@@ -62,7 +63,7 @@ public class ChangesFeedPlugin extends Plugin {
     @Override
     public void onIndexModule(IndexModule indexModule) {
         if (enabled) {
-            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, REGISTER,redisClient));
+            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, REGISTER,redisClient,rabbitmqClient));
         }
         super.onIndexModule(indexModule);
     }

@@ -13,6 +13,7 @@ import org.joda.time.DateTime;
 
 import java.io.IOException;
 import java.util.Set;
+import org.apache.commons.codec.digest.DigestUtils;
 
 /**
  * Date: 04/05/2017 Time: 16:54
@@ -24,11 +25,13 @@ public class WebSocketIndexListener implements IndexingOperationListener {
     private final Set<Source> sources;
     private final WebSocketRegister register;
     private final RedisClient redisClient;
+    private final RabbitmqClient rabbitmqClient;
 
-    WebSocketIndexListener(Set<Source> sources, WebSocketRegister register,RedisClient redisClient) {
+    WebSocketIndexListener(Set<Source> sources, WebSocketRegister register, RedisClient redisClient, RabbitmqClient rabbitmqClient) {
         this.sources = sources;
         this.register = register;
         this.redisClient = redisClient;
+        this.rabbitmqClient = rabbitmqClient;
     }
 
     @Override
@@ -115,7 +118,14 @@ public class WebSocketIndexListener implements IndexingOperationListener {
             log.error("Failed to write JSON", e);
             return;
         }
-        this.redisClient.pushBl(message);
+        String messageMd5 = DigestUtils.md5Hex(message);
+        try {
+            if (this.redisClient.isFirst(messageMd5, 10)) {
+                this.rabbitmqClient.enqueue(messageMd5);
+            }
+        } catch (Exception e) {
+            log.error("Error enqueue msg", e);
+        }
         for (WebSocketEndpoint listener : register.getListeners()) {
             try {
                 listener.sendMessage(message);
