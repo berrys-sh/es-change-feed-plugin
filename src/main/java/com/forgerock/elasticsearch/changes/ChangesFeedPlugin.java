@@ -15,6 +15,7 @@ package com.forgerock.elasticsearch.changes;
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+import java.io.IOException;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Setting;
@@ -40,15 +41,14 @@ public class ChangesFeedPlugin extends Plugin {
     private final static WebSocketRegister REGISTER = new WebSocketRegister();
     private final static RedisClient redisClient = new RedisClient();
     private final static RabbitmqClient rabbitmqClient = new RabbitmqClient();
+    private final static ConfigurationManager config = ConfigurationManager.getInstance();
 
-    public ChangesFeedPlugin(Settings settings) {
+    public ChangesFeedPlugin(Settings settings) throws IOException {
         log.info("Starting Changes Plugin");
-
-        enabled = !settings.getAsBoolean(SETTING_DISABLE, false);
-
+        enabled = !settings.getAsBoolean(SETTING_DISABLE, config.getIsDisable());
         if (enabled) {
             int port = settings.getAsInt(SETTING_PORT, 9400);
-            String[] sourcesStr = settings.getAsArray(SETTING_LISTEN_SOURCE, new String[]{"frame/*/*"});
+            String[] sourcesStr = settings.getAsArray(SETTING_LISTEN_SOURCE, new String[]{config.getListenSource()});
             this.sources = Arrays.stream(sourcesStr)
                     .map(Source::new)
                     .collect(Collectors.toSet());
@@ -63,7 +63,7 @@ public class ChangesFeedPlugin extends Plugin {
     @Override
     public void onIndexModule(IndexModule indexModule) {
         if (enabled) {
-            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, REGISTER,redisClient,rabbitmqClient));
+            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, REGISTER, redisClient, rabbitmqClient));
         }
         super.onIndexModule(indexModule);
     }

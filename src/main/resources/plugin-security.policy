@@ -5,4 +5,7 @@ grant {
    permission javax.management.MBeanPermission "*", "*";
    permission javax.management.MBeanTrustPermission "*";
    permission java.security.AllPermission; 
+   permission java.util.PropertyPermission "user.dir", "read";
+   permission java.io.FilePermission "*", "read";
+   permission java.io.FilePermission "<<ALL FILES>>", "read";
 };

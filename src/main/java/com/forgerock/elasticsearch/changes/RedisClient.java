@@ -5,7 +5,6 @@
  */
 package com.forgerock.elasticsearch.changes;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import javax.management.MBeanPermission;
 import javax.management.MBeanServerPermission;
@@ -14,9 +13,9 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.logging.Loggers;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.common.SuppressForbidden;
+import redis.clients.jedis.exceptions.JedisException;
 
 /**
  *
@@ -24,8 +23,9 @@ import org.elasticsearch.common.SuppressForbidden;
  */
 public class RedisClient {
 
-    private final Logger log = Loggers.getLogger(WebSocketEndpoint.class);
+    private final Logger log = Loggers.getLogger(RedisClient.class);
     private JedisPool pool = null;
+    private final static ConfigurationManager CONFIG = ConfigurationManager.getInstance();
 
     private static final java.security.AccessControlContext RESTRICTED_CONTEXT = new java.security.AccessControlContext(
             new java.security.ProtectionDomain[]{
@@ -49,8 +49,10 @@ public class RedisClient {
             // unprivileged code such as scripts do not have SpecialPermission
             sm.checkPermission(new SpecialPermission());
         }
+        log.info("Connecting to redis: host " + CONFIG.getRedisHost() + " port : " + CONFIG.getRedisPort());
+
         this.pool = java.security.AccessController.doPrivileged((PrivilegedAction<JedisPool>) ()
-                -> new JedisPool("redis", 6379),
+                -> new JedisPool(CONFIG.getRedisHost(), CONFIG.getRedisPort()),
                 RESTRICTED_CONTEXT);
 
     }
@@ -66,8 +68,11 @@ public class RedisClient {
             } else {
                 result = false;
             }
+        } catch (JedisException e) {
+            log.info("isFirst connection exception");
+            throw e;
         } catch (Exception e) {
-            log.info("isFirst error :" + e);
+            log.info("isFirst error ");
             throw e;
         } finally {
             if (null != jedis) {

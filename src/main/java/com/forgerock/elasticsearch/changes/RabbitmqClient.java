@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.common.logging.Loggers;
 import org.json.JSONObject;
 
 /**
@@ -25,10 +27,22 @@ public class RabbitmqClient {
     ConnectionFactory factory = null;
     Connection connection = null;
     Channel channel = null;
+    private final static ConfigurationManager CONFIG = ConfigurationManager.getInstance();
+    private final Logger log = Loggers.getLogger(RabbitmqClient.class);
 
     public RabbitmqClient() {
+        log.info("Connecting to rabbitmq: host " + CONFIG.getRabbitmqHost() + " port : " + CONFIG.getRabbitmqPort());
         this.factory = new ConnectionFactory();
-        this.factory.setHost("rabbitmq");
+        this.factory.setHost(CONFIG.getRabbitmqHost());
+        this.factory.setPort(CONFIG.getRabbitmqPort());
+        if (!CONFIG.getRabbitmqUsername().isEmpty()) {
+            this.factory.setUsername(CONFIG.getRabbitmqUsername());
+        }
+        if (!CONFIG.getRabbitmqPassword().isEmpty()) {
+
+            this.factory.setPassword(CONFIG.getRabbitmqPassword());
+        }
+
     }
 
     private boolean reNewConnectionIfClose() throws IOException, TimeoutException {
@@ -44,7 +58,7 @@ public class RabbitmqClient {
                     this.channel.exchangeDeclare(qExchangeName, "direct", true);
                     this.channel.queueDeclare(TASK_QUEUE_NAME, true, false, false, args);
                     this.channel.queueBind(TASK_QUEUE_NAME, qExchangeName, "", null);
-                    isConnected =  true;
+                    isConnected = true;
                 }
             } else {
                 isConnected = true;
@@ -59,7 +73,7 @@ public class RabbitmqClient {
 
             this.channel = null;
             this.connection = null;
-            System.out.println("Error in reNewConnectionIfClose :" +  e);
+            log.error("Error in reNewConnectionIfClose :" + e);
         } finally {
             return isConnected;
         }
@@ -67,10 +81,10 @@ public class RabbitmqClient {
 
     public void enqueue(String message) throws IOException, TimeoutException {
         if (this.reNewConnectionIfClose()) {
-        channel.basicPublish("", TASK_QUEUE_NAME,
-                MessageProperties.PERSISTENT_TEXT_PLAIN,
-                message.getBytes());
-        System.out.println(" [x] Sent '" + message + "'");
+            channel.basicPublish("", TASK_QUEUE_NAME,
+                    MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    message.getBytes());
+            log.debug(" [x] Sent '" + message + "'");
         }
     }
 

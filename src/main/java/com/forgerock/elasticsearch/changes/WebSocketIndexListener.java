@@ -121,7 +121,7 @@ public class WebSocketIndexListener implements IndexingOperationListener {
         String messageMd5 = DigestUtils.md5Hex(message);
         try {
             if (this.redisClient.isFirst(messageMd5, 10)) {
-                this.rabbitmqClient.enqueue(messageMd5);
+                this.rabbitmqClient.enqueue(message);
             }
         } catch (Exception e) {
             log.error("Error enqueue msg", e);
