@@ -37,6 +37,8 @@ public class ConfigurationManager {
     private static final String SETTING_RABBITMQ_PASSWORD = "changes.rabbitmq.password";
     private static final String SETTING_DISABLE = "changes.disable";
     private static final String SETTING_LISTEN_SOURCE = "changes.listenSource";
+    private static final String SETTING_VERSION = "changes.version";
+
 
     private ConfigurationManager() {
         SecurityManager sm = System.getSecurityManager();
@@ -74,6 +76,7 @@ public class ConfigurationManager {
             ConfigurationManager.CONFIG.put(SETTING_RABBITMQ_PASSWORD, prop.getProperty(SETTING_RABBITMQ_PASSWORD));
             ConfigurationManager.CONFIG.put(SETTING_LISTEN_SOURCE, prop.getProperty(SETTING_LISTEN_SOURCE));
             ConfigurationManager.CONFIG.put(SETTING_DISABLE, prop.getProperty(SETTING_DISABLE));
+            ConfigurationManager.CONFIG.put(SETTING_VERSION, prop.getProperty(SETTING_VERSION));
 
             log.info("************************ es-change-feed-plugin configuration  ******************************");
             ConfigurationManager.CONFIG.entrySet().forEach(entry -> {

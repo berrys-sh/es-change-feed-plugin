@@ -99,6 +99,8 @@ public class WebSocketIndexListener implements IndexingOperationListener {
         }
 
         String message;
+        String message4hash;
+
         try {
             XContentBuilder builder = new XContentBuilder(JsonXContent.jsonXContent, new BytesStreamOutput());
             builder.startObject()
@@ -114,11 +116,25 @@ public class WebSocketIndexListener implements IndexingOperationListener {
             builder.endObject();
 
             message = builder.string();
+
+            XContentBuilder builderHash = new XContentBuilder(JsonXContent.jsonXContent, new BytesStreamOutput());
+            builderHash.startObject()
+                    .field("_index", change.getIndex())
+                    .field("_type", change.getType())
+                    .field("_id", change.getId())
+                    .field("_version", change.getVersion())
+                    .field("_operation", change.getOperation().toString());
+            if (change.getSource() != null) {
+                builderHash.rawField("_source", change.getSource(), XContentType.JSON);
+            }
+            builderHash.endObject();
+
+            message4hash = builderHash.string();
         } catch (IOException e) {
             log.error("Failed to write JSON", e);
             return;
         }
-        String messageMd5 = DigestUtils.md5Hex(message);
+        String messageMd5 = DigestUtils.md5Hex(message4hash);
         try {
             if (this.redisClient.isFirst(messageMd5, 10)) {
                 this.rabbitmqClient.enqueue(message);
