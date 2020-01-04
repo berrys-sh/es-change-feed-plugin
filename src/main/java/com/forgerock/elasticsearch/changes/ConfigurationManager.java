@@ -31,14 +31,17 @@ public class ConfigurationManager {
     private static final String SETTING_PORT = "changes.port";
     private static final String SETTING_REDIS_PORT = "changes.redis.port";
     private static final String SETTING_REDIS_HOST = "changes.redis.host";
+    private static final String SETTING_REDIS_ISFIRST_TLL = "changes.redis.isfirst.ttl";
     private static final String SETTING_RABBITMQ_PORT = "changes.rabbitmq.port";
     private static final String SETTING_RABBITMQ_HOST = "changes.rabbitmq.host";
     private static final String SETTING_RABBITMQ_USERNAME = "changes.rabbitmq.username";
     private static final String SETTING_RABBITMQ_PASSWORD = "changes.rabbitmq.password";
+    private static final String SETTING_RABBITMQ_QUEUE_NAME = "changes.rabbitmq.queue.name";
+    private static final String SETTING_RABBITMQ_QUEUEDLX_TTL = "changes.rabbitmq.queuedlx.ttl";
+    private static final String SETTING_RABBITMQ_QUEUEWAITINDEXDLX_TTL = "changes.rabbitmq.queuewaitindex.dlx.ttl";
     private static final String SETTING_DISABLE = "changes.disable";
     private static final String SETTING_LISTEN_SOURCE = "changes.listenSource";
     private static final String SETTING_VERSION = "changes.version";
-
 
     private ConfigurationManager() {
         SecurityManager sm = System.getSecurityManager();
@@ -70,10 +73,14 @@ public class ConfigurationManager {
             ConfigurationManager.CONFIG.put(SETTING_PORT, prop.getProperty(SETTING_PORT));
             ConfigurationManager.CONFIG.put(SETTING_REDIS_HOST, prop.getProperty(SETTING_REDIS_HOST));
             ConfigurationManager.CONFIG.put(SETTING_REDIS_PORT, prop.getProperty(SETTING_REDIS_PORT));
+            ConfigurationManager.CONFIG.put(SETTING_REDIS_ISFIRST_TLL, prop.getProperty(SETTING_REDIS_ISFIRST_TLL));
             ConfigurationManager.CONFIG.put(SETTING_RABBITMQ_HOST, prop.getProperty(SETTING_RABBITMQ_HOST));
             ConfigurationManager.CONFIG.put(SETTING_RABBITMQ_PORT, prop.getProperty(SETTING_RABBITMQ_PORT));
             ConfigurationManager.CONFIG.put(SETTING_RABBITMQ_USERNAME, prop.getProperty(SETTING_RABBITMQ_USERNAME));
             ConfigurationManager.CONFIG.put(SETTING_RABBITMQ_PASSWORD, prop.getProperty(SETTING_RABBITMQ_PASSWORD));
+            ConfigurationManager.CONFIG.put(SETTING_RABBITMQ_QUEUE_NAME, prop.getProperty(SETTING_RABBITMQ_QUEUE_NAME));
+            ConfigurationManager.CONFIG.put(SETTING_RABBITMQ_QUEUEDLX_TTL, prop.getProperty(SETTING_RABBITMQ_QUEUEDLX_TTL));
+            ConfigurationManager.CONFIG.put(SETTING_RABBITMQ_QUEUEWAITINDEXDLX_TTL, prop.getProperty(SETTING_RABBITMQ_QUEUEWAITINDEXDLX_TTL));
             ConfigurationManager.CONFIG.put(SETTING_LISTEN_SOURCE, prop.getProperty(SETTING_LISTEN_SOURCE));
             ConfigurationManager.CONFIG.put(SETTING_DISABLE, prop.getProperty(SETTING_DISABLE));
             ConfigurationManager.CONFIG.put(SETTING_VERSION, prop.getProperty(SETTING_VERSION));
@@ -111,10 +118,11 @@ public class ConfigurationManager {
         perms.add(new FilePermission("<<ALL FILES>>", "read"));
         return perms;
     }
+
     public boolean getIsDisable() {
         return Boolean.parseBoolean(ConfigurationManager.CONFIG.get(SETTING_DISABLE));
     }
-    
+
     public int getSocketPort() {
         return Integer.parseInt(ConfigurationManager.CONFIG.get(SETTING_PORT));
     }
@@ -125,6 +133,10 @@ public class ConfigurationManager {
 
     public String getRedisHost() {
         return ConfigurationManager.CONFIG.get(SETTING_REDIS_HOST);
+    }
+
+    public int getRedisIsFirstTTL() {
+        return Integer.parseInt(ConfigurationManager.CONFIG.get(SETTING_REDIS_ISFIRST_TLL));
     }
 
     public int getRabbitmqPort() {
@@ -141,6 +153,18 @@ public class ConfigurationManager {
 
     public String getRabbitmqPassword() {
         return ConfigurationManager.CONFIG.get(SETTING_RABBITMQ_PASSWORD);
+    }
+
+    public String getRabbitmqQueueName() {
+        return ConfigurationManager.CONFIG.get(SETTING_RABBITMQ_QUEUE_NAME);
+    }
+
+    public int getRabbitmqQueuedlxTTL() {
+        return Integer.parseInt(ConfigurationManager.CONFIG.get(SETTING_RABBITMQ_QUEUEDLX_TTL));
+    }
+
+    public int getRabbitmqQueueWaitIndexDlxTTL() {
+        return Integer.parseInt(ConfigurationManager.CONFIG.get(SETTING_RABBITMQ_QUEUEWAITINDEXDLX_TTL));
     }
 
     public String getListenSource() {

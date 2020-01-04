@@ -20,14 +20,16 @@ import org.json.JSONObject;
  */
 public class RabbitmqClient {
 
-    private static final String TASK_QUEUE_NAME = "task_queue";
+    private final static ConfigurationManager CONFIG = ConfigurationManager.getInstance();
+    private static final String TASK_QUEUE_NAME = CONFIG.getRabbitmqQueueName();
     String qExchangeName = TASK_QUEUE_NAME + "-exchange";
-    String dlxQueueName = TASK_QUEUE_NAME + "-dlx";
-    String dlxQExchangeName = dlxQueueName + "-exchange";
+    String dlxQueueName = TASK_QUEUE_NAME + "_" + CONFIG.getRabbitmqQueuedlxTTL() + "-dlx";
+    String dlxQExchangeName = dlxQueueName + "_" + CONFIG.getRabbitmqQueuedlxTTL() + "-exchange";
+    String dlxWaitIndexQueueName = TASK_QUEUE_NAME + "_wait_index_" + CONFIG.getRabbitmqQueueWaitIndexDlxTTL() + "-dlx";
+    String dlxWaitIndexQExchangeName = dlxQueueName + "_wait_index_" + CONFIG.getRabbitmqQueueWaitIndexDlxTTL() + "-exchange";
     ConnectionFactory factory = null;
     Connection connection = null;
     Channel channel = null;
-    private final static ConfigurationManager CONFIG = ConfigurationManager.getInstance();
     private final Logger log = Loggers.getLogger(RabbitmqClient.class);
 
     public RabbitmqClient() {
@@ -52,12 +54,20 @@ public class RabbitmqClient {
                 this.connection = factory.newConnection();
                 if (this.connection.isOpen()) {
                     this.channel = this.connection.createChannel();
-                    Map<String, Object> args = new HashMap<>();
-                    args.put("x-dead-letter-exchange", dlxQExchangeName);
-                    args.put("x-dead-letter-routing-key", "");
+                    Map<String, Object> qArgs = new HashMap<>();
+                    qArgs.put("x-dead-letter-exchange", dlxQExchangeName);
+                    qArgs.put("x-dead-letter-routing-key", "");
                     this.channel.exchangeDeclare(qExchangeName, "direct", true);
-                    this.channel.queueDeclare(TASK_QUEUE_NAME, true, false, false, args);
+                    this.channel.queueDeclare(TASK_QUEUE_NAME, true, false, false, qArgs);
                     this.channel.queueBind(TASK_QUEUE_NAME, qExchangeName, "", null);
+
+                    Map<String, Object> qDlxArgs = new HashMap<>();
+                    qDlxArgs.put("x-dead-letter-exchange", qExchangeName);
+                    qDlxArgs.put("x-dead-letter-routing-key", "");
+                    qDlxArgs.put("x-message-ttl", CONFIG.getRabbitmqQueueWaitIndexDlxTTL() * 1000);
+                    this.channel.exchangeDeclare(dlxWaitIndexQExchangeName, "direct", true);
+                    this.channel.queueDeclare(dlxWaitIndexQueueName, true, false, false, qDlxArgs);
+                    this.channel.queueBind(dlxWaitIndexQueueName, dlxWaitIndexQExchangeName, "", null);
                     isConnected = true;
                 }
             } else {
@@ -81,7 +91,7 @@ public class RabbitmqClient {
 
     public void enqueue(String message) throws IOException, TimeoutException {
         if (this.reNewConnectionIfClose()) {
-            channel.basicPublish("", TASK_QUEUE_NAME,
+            channel.basicPublish("", dlxWaitIndexQueueName,
                     MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes());
             log.debug(" [x] Sent '" + message + "'");

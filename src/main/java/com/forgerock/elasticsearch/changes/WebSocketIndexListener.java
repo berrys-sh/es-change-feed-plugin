@@ -21,11 +21,11 @@ import org.apache.commons.codec.digest.DigestUtils;
 public class WebSocketIndexListener implements IndexingOperationListener {
 
     private final Logger log = Loggers.getLogger(WebSocketIndexListener.class);
-
     private final Set<Source> sources;
     private final WebSocketRegister register;
     private final RedisClient redisClient;
     private final RabbitmqClient rabbitmqClient;
+    private final static ConfigurationManager CONFIG = ConfigurationManager.getInstance();
 
     WebSocketIndexListener(Set<Source> sources, WebSocketRegister register, RedisClient redisClient, RabbitmqClient rabbitmqClient) {
         this.sources = sources;
@@ -136,7 +136,7 @@ public class WebSocketIndexListener implements IndexingOperationListener {
         }
         String messageMd5 = DigestUtils.md5Hex(message4hash);
         try {
-            if (this.redisClient.isFirst(messageMd5, 10)) {
+            if (this.redisClient.isFirst(messageMd5, CONFIG.getRedisIsFirstTTL())) {
                 this.rabbitmqClient.enqueue(message);
             }
         } catch (Exception e) {
