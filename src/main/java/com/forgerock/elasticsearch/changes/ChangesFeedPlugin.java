@@ -35,7 +35,9 @@ public class ChangesFeedPlugin extends Plugin {
     private static final String SETTING_DISABLE = "changes.disable";
     private static final String SETTING_FILTER = "changes.field.includes";
     private final static RedisClient redisClient = new RedisClient();
-
+    private final static RabbitmqClient rabbitmqClient = new RabbitmqClient();
+    private final static ConfigurationManager config = ConfigurationManager.getInstance();
+    
     private final Logger log = Loggers.getLogger(ChangesFeedPlugin.class, "Changes Feed");
     private final Set<Source> sources;
     private final boolean enabled;
@@ -66,7 +68,7 @@ public class ChangesFeedPlugin extends Plugin {
     @Override
     public void onIndexModule(IndexModule indexModule) {
         if (enabled) {
-            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, filter, REGISTER, redisClient));
+            indexModule.addIndexOperationListener(new WebSocketIndexListener(sources, filter, REGISTER, redisClient,rabbitmqClient));
         }
         super.onIndexModule(indexModule);
     }

@@ -13,6 +13,9 @@
     </dependencySets>
     <files>
         <file>
+            <source>src/main/resources/plugin-config.properties</source>
+        </file>
+        <file>
             <source>target/classes/plugin-descriptor.properties</source>
         </file>
         <file>

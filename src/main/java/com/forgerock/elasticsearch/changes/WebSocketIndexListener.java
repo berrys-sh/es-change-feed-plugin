@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
@@ -28,12 +29,15 @@ public class WebSocketIndexListener implements IndexingOperationListener {
     private final List<String> filter;
     private final WebSocketRegister register;
     private final RedisClient redisClient;
+    private final RabbitmqClient rabbitmqClient;
+    private final static ConfigurationManager CONFIG = ConfigurationManager.getInstance();
 
-    WebSocketIndexListener(Set<Source> sources, List<String> filter, WebSocketRegister register, RedisClient redisClient) {
+    WebSocketIndexListener(Set<Source> sources, List<String> filter, WebSocketRegister register, RedisClient redisClient, RabbitmqClient rabbitmqClient) {
         this.sources = sources;
         this.filter = filter;
         this.register = register;
         this.redisClient = redisClient;
+        this.rabbitmqClient = rabbitmqClient;
 
     }
 
@@ -113,7 +117,7 @@ public class WebSocketIndexListener implements IndexingOperationListener {
             return;
         }
         String message;
-
+        String message4hash;
         Set<String> filters = new HashSet<>(filter);
 
         try {
@@ -130,14 +134,29 @@ public class WebSocketIndexListener implements IndexingOperationListener {
             }
             builder.endObject();
             message = Strings.toString(builder);
+            XContentBuilder builderHash = new XContentBuilder(JsonXContent.jsonXContent, new BytesStreamOutput(), filters);
+            builderHash.startObject()
+                    .field("_index", change.getIndex())
+                    .field("_type", change.getType())
+                    .field("_id", change.getId())
+                    .field("_version", change.getVersion())
+                    .field("_operation", change.getOperation().toString());
+            if (change.getSource() != null) {
+                builderHash.rawField("_source", change.getSource().streamInput(), XContentType.JSON);
+            }
+            builderHash.endObject();
+            message4hash = Strings.toString(builderHash);
         } catch (IOException e) {
             log.error("Failed to write JSON", e);
             return;
         }
+        String messageMd5 = DigestUtils.md5Hex(message4hash);
         try {
-            this.redisClient.pushBl(message);
+            if (this.redisClient.isFirst(messageMd5, CONFIG.getRedisIsFirstTTL())) {
+                this.rabbitmqClient.enqueue(message);
+            }
         } catch (Exception e) {
-            log.error("Failed to pushBl", e);
+            log.error("Error enqueue msg", e);
         }
 
         for (WebSocketEndpoint listener : register.getListeners()) {
