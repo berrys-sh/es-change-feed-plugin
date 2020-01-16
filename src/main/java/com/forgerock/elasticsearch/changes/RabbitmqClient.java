@@ -19,7 +19,6 @@ import javax.management.MBeanTrustPermission;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.logging.Loggers;
-import org.json.JSONObject;
 
 /**
  *
@@ -68,10 +67,6 @@ public class RabbitmqClient {
         perms.add(new MBeanPermission("*", "*"));
         perms.add(new MBeanTrustPermission("*"));
         perms.add(new RuntimePermission("*"));
-//       perms.add(new SocketPermission("redis:6379", "connect,resolve"));
-//        perms.add(new SocketPermission("172.17.0.2:6379", "connect,resolve"));
-//        perms.add(new AllPermission());
-
         return perms;
     }
 

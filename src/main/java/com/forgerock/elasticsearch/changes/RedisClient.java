@@ -6,9 +6,7 @@
 package com.forgerock.elasticsearch.changes;
 
 import java.net.SocketPermission;
-import java.security.AllPermission;
 import java.security.PrivilegedAction;
-import java.util.PropertyPermission;
 import javax.management.MBeanPermission;
 import javax.management.MBeanServerPermission;
 import javax.management.MBeanTrustPermission;
@@ -44,10 +42,6 @@ public class RedisClient {
         perms.add(new MBeanPermission("*", "*"));
         perms.add(new MBeanTrustPermission("*"));
         perms.add(new RuntimePermission("*"));
-//       perms.add(new SocketPermission("redis:6379", "connect,resolve"));
-//        perms.add(new SocketPermission("172.17.0.2:6379", "connect,resolve"));
-//        perms.add(new AllPermission());
-
         return perms;
     }
 
@@ -70,8 +64,8 @@ public class RedisClient {
         Jedis jedis = null;
         try {
             jedis = java.security.AccessController.doPrivileged((PrivilegedAction<Jedis>) ()
-                -> this.pool.getResource(),
-                RESTRICTED_CONTEXT);
+                    -> this.pool.getResource(),
+                    RESTRICTED_CONTEXT);
             if (jedis.setnx(key, "TRUE") == 1) {
                 jedis.expire(key, ttl);
                 result = true;

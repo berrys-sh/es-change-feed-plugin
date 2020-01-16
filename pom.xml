@@ -13,19 +13,7 @@
         <plugin.java.version>1.8</plugin.java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <changes.port>9401</changes.port>
-        <changes.version>1.0.0</changes.version>
-        <changes.disable></changes.disable>
-        <changes.listenSource></changes.listenSource>
-        <changes.redis.port></changes.redis.port>
-        <changes.redis.host></changes.redis.host>
-        <changes.redis.isfirst.ttl></changes.redis.isfirst.ttl>
-        <changes.rabbitmq.port></changes.rabbitmq.port>
-        <changes.rabbitmq.host></changes.rabbitmq.host>
-        <changes.rabbitmq.username></changes.rabbitmq.username>
-        <changes.rabbitmq.password></changes.rabbitmq.password>
-        <changes.rabbitmq.queue.name></changes.rabbitmq.queue.name>
-        <changes.rabbitmq.queuedlx.ttl></changes.rabbitmq.queuedlx.ttl>
-        <changes.rabbitmq.queuewaitindex.dlx.ttl></changes.rabbitmq.queuewaitindex.dlx.ttl>
+        <changes.version>1.0.1</changes.version>
     </properties>
 
     <build>
